@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 )
 
@@ -36,9 +37,10 @@ func AddTag(name string, state int, createdBy string) error {
 		CreatedBy: createdBy,
 	}
 	if err := db.Create(&tag).Error; err != nil {
+		println(err)
 		return err
 	}
-
+	fmt.Println("1234")
 	return nil
 }
 

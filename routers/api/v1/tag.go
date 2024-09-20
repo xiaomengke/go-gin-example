@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"github.com/EDDYCJY/go-gin-example/models"
 	"net/http"
+	"strconv"
 
-	"github.com/unknwon/com"
 	"github.com/astaxie/beego/validation"
 	"github.com/gin-gonic/gin"
+	"github.com/unknwon/com"
 
 	"github.com/EDDYCJY/go-gin-example/pkg/app"
 	"github.com/EDDYCJY/go-gin-example/pkg/e"
@@ -30,6 +32,9 @@ func GetTags(c *gin.Context) {
 	if arg := c.Query("state"); arg != "" {
 		state = com.StrTo(arg).MustInt()
 	}
+	//maps := make(map[string]interface{})
+	//maps["name"] = name
+	//maps["state"] = state
 
 	tagService := tag_service.Tag{
 		Name:     name,
@@ -37,13 +42,16 @@ func GetTags(c *gin.Context) {
 		PageNum:  util.GetPage(c),
 		PageSize: setting.AppSetting.PageSize,
 	}
+	//_ = tagService
 	tags, err := tagService.GetAll()
+	//tags, err := models.GetTags(util.GetPage(c), setting.AppSetting.PageSize, maps)
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_GET_TAGS_FAIL, nil)
 		return
 	}
 
 	count, err := tagService.Count()
+	//count, err := models.GetTagTotal(maps)
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_COUNT_TAG_FAIL, nil)
 		return
@@ -61,6 +69,31 @@ type AddTagForm struct {
 	State     int    `form:"state" valid:"Range(0,1)"`
 }
 
+func AddTag(c *gin.Context) {
+	appG := app.Gin{
+		C: c,
+	}
+	name := c.Query("name")
+	state, _ := strconv.Atoi(c.DefaultQuery("state", "0"))
+	createdBy := c.Query("created_by")
+	valid := validation.Validation{}
+	valid.Required(name, "name").Message("名称不能为空")
+	valid.MaxSize(name, 100, "name").Message("名称不能过长")
+	valid.Required(createdBy, "created_by").Message("创建人不能为空")
+	valid.MaxSize(createdBy, 100, "createdBy").Message("创建人最长为100字符")
+	valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
+	code := e.INVALID_PARAMS
+	if !valid.HasErrors() {
+		if ok, _ := models.ExistTagByName(name); ok {
+			code = e.SUCCESS
+			models.AddTag(name, state, createdBy)
+		} else {
+			code = e.ERROR_EXIST_TAG
+		}
+	}
+	appG.Response(http.StatusOK, code, nil)
+}
+
 // @Summary Add article tag
 // @Produce  json
 // @Param name body string true "Name"
@@ -69,7 +102,7 @@ type AddTagForm struct {
 // @Success 200 {object} app.Response
 // @Failure 500 {object} app.Response
 // @Router /api/v1/tags [post]
-func AddTag(c *gin.Context) {
+func AddTag2(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
 		form AddTagForm

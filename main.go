@@ -11,8 +11,8 @@ import (
 	"github.com/EDDYCJY/go-gin-example/pkg/gredis"
 	"github.com/EDDYCJY/go-gin-example/pkg/logging"
 	"github.com/EDDYCJY/go-gin-example/pkg/setting"
-	"github.com/EDDYCJY/go-gin-example/routers"
 	"github.com/EDDYCJY/go-gin-example/pkg/util"
+	"github.com/EDDYCJY/go-gin-example/routers"
 )
 
 func init() {
@@ -29,7 +29,37 @@ func init() {
 // @termsOfService https://github.com/EDDYCJY/go-gin-example
 // @license.name MIT
 // @license.url https://github.com/EDDYCJY/go-gin-example/blob/master/LICENSE
+
+func main1() {
+	router := gin.Default()
+	router.GET("/test", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{
+			"message": "test",
+		})
+	})
+	s := &http.Server{
+		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HttpPort),
+		Handler:        router,
+		ReadTimeout:    setting.ServerSetting.ReadTimeout,
+		MaxHeaderBytes: 1 << 20,
+	}
+	s.ListenAndServe()
+
+}
 func main() {
+	gin.SetMode(setting.ServerSetting.RunMode)
+	routersInit := routers.InitRouter()
+	s := &http.Server{
+		Addr:           fmt.Sprintf(":%d", setting.ServerSetting.HttpPort),
+		Handler:        routersInit,
+		ReadTimeout:    setting.ServerSetting.ReadTimeout,
+		MaxHeaderBytes: 1 << 20,
+	}
+	s.ListenAndServe()
+
+}
+
+func main2() {
 	gin.SetMode(setting.ServerSetting.RunMode)
 
 	routersInit := routers.InitRouter()
